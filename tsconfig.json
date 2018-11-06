@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceMap": true,
+    "target": "es5",
+    "jsx": "react",
+    "jsxFactory": "h",
+    "allowJs": true,
+    "lib": [
+      "es2015.symbol",
+      "es2015.symbol.wellknown",
+      "dom",
+      "es5",
+      "es2015.promise"
+    ]
+  }
+}
