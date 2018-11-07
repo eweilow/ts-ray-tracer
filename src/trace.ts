@@ -1,4 +1,4 @@
-import ImportedTracer = require("worker-loader!./tracer");
+import ImportedTracer = require("worker-loader!./worker/index.worker.ts");
 
 export function run() {
   const gridSize = 128;

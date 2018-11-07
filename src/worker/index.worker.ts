@@ -6,8 +6,15 @@ class Texture {
   constructor(private data: Color[][]) {}
 
   get(x: number, y: number): Color {
-    const i = Math.floor(x) % this.data[0].length;
-    const j = Math.floor(y) % this.data[1].length;
+    if (x < 0) {
+      x -= 1;
+    }
+    if (y < 0) {
+      y -= 1;
+    }
+
+    const i = Math.floor(Math.abs(x)) % this.data[0].length;
+    const j = Math.floor(Math.abs(y)) % this.data[1].length;
     return this.data[i][j];
   }
 }
@@ -359,17 +366,13 @@ class Ray {
     ) {
       const dot = Math.abs(Ray.dot(raydata, 3, planeIntersection, 4));
 
-      const diffuse = Ray.floorTexture(
-        planeIntersection[1],
-        planeIntersection[2]
-      );
-      const diffuseLighting = diffusePass
-        ? Ray.diffuseTrace(planeIntersection, 1, 5, 0)
-        : [0, 0, 0];
       const checkers = Ray.floorTexture(
         planeIntersection[1],
         planeIntersection[2]
       );
+      const diffuseLighting = diffusePass
+        ? Ray.diffuseTrace(planeIntersection, 1, maxSteps, runSteps + 1)
+        : [0, 0, 0];
 
       const traced = Ray.trace(
         Ray.reflect(raydata, 3, planeIntersection, 1),
@@ -382,7 +385,7 @@ class Ray {
       return Ray.fresnel(
         0.2 * checkers[0],
         diffuseLighting,
-        diffuse,
+        checkers,
         traced,
         dot
       );
@@ -402,7 +405,7 @@ class Ray {
 
       const reflected = Ray.reflect(raydata, 3, sphereIntersection, 1);
       const diffuseLighting = diffusePass
-        ? Ray.diffuseTrace(sphereIntersection, 1, 5, 0)
+        ? Ray.diffuseTrace(sphereIntersection, 1, maxSteps, runSteps + 1)
         : [0, 0, 0];
 
       const traced = Ray.trace(
@@ -541,22 +544,21 @@ function render(e) {
   for (let x = 0; x < cellSize; x++) {
     const px = cx + x;
 
+    if (Date.now() - lastProgress > 10) {
+      lastProgress = Date.now();
+      ctx.postMessage({
+        type: "progress",
+        progress: x / cellSize
+      });
+    }
     for (let y = 0; y < cellSize; y++) {
       const py = cy + y;
 
       const i = y * cellSize + x;
-
-      if (Date.now() - lastProgress > 100) {
-        ctx.postMessage({
-          type: "progress",
-          progress: i / (cellSize * cellSize)
-        });
-        lastProgress = Date.now();
-      }
       const stride = 0;
 
       projector.project(raydata, 0, px, py, width, height);
-      const color = Ray.trace(raydata, stride, 5, 0);
+      const color = Ray.trace(raydata, stride, 32, 0);
 
       imageData[i * 4 + 0] = Math.floor(color[0] * 255);
       imageData[i * 4 + 1] = Math.floor(color[1] * 255);
