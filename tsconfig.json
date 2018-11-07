@@ -8,6 +8,7 @@
     "allowJs": true,
     "lib": [
       "es2015.symbol",
+      "es2015",
       "es2015.symbol.wellknown",
       "dom",
       "es5",

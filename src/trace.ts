@@ -4,7 +4,7 @@ export function run() {
   const gridSize = 128;
   const size = gridSize * Math.floor(600 / gridSize) * 2;
 
-  const threads = 4;
+  const threads = 8;
 
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -80,7 +80,9 @@ export function run() {
 
   const startTime = Date.now();
 
+  const imageDatas: Array<ImageData> = [];
   const imageBuffers: Uint8ClampedArray[] = [];
+  const progress: Float64Array = new Float64Array(gridSize * gridSize);
   const grids = size / gridSize;
 
   const channels = 4;
@@ -88,14 +90,52 @@ export function run() {
     for (let y = 0; y < grids; y++) {
       const i = y * grids + x;
 
+      imageDatas.push(null);
       imageBuffers[i] = new Uint8ClampedArray(gridSize * gridSize * channels);
+    }
+  }
+
+  const changedParts = new Set<number>();
+  let queued = false;
+  function render() {
+    queued = false;
+    for (let x = 0; x < grids; x++) {
+      for (let y = 0; y < grids; y++) {
+        const i = y * grids + x;
+
+        if (!changedParts.has(i)) {
+          continue;
+        }
+
+        if (progress[i] >= 1) {
+          ctx.putImageData(imageDatas[i], x * gridSize, y * gridSize);
+        } else {
+          ctx.fillStyle = "red";
+          ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+          ctx.fillStyle = "green";
+          ctx.fillRect(
+            x * gridSize,
+            y * gridSize,
+            Math.round(gridSize * progress[i]),
+            gridSize
+          );
+        }
+      }
+    }
+    changedParts.clear();
+  }
+
+  function enqueueRender(i: number) {
+    changedParts.add(i);
+    if (!queued) {
+      queued = true;
+      requestAnimationFrame(render);
     }
   }
 
   function tick() {
     const time = Date.now();
 
-    const imageDatas = [];
     for (let x = 0; x < grids; x++) {
       for (let y = 0; y < grids; y++) {
         const i = y * grids + x;
@@ -104,8 +144,8 @@ export function run() {
 
         queue
           .enqueue(x * grids + y, async worker => {
-            ctx.fillStyle = "red";
-            ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+            progress[i] = 0;
+            enqueueRender(i);
             return new Promise<void>((resolve, reject) => {
               const listener = e => {
                 if (e.data.type === "done") {
@@ -117,21 +157,15 @@ export function run() {
                     gridSize,
                     gridSize
                   );
-                  imageDatas.push({ x, y, data });
-                  ctx.putImageData(data, x * gridSize, y * gridSize);
-
+                  imageDatas[i] = data;
                   imageBuffers[i] = e.data;
+                  progress[i] = 1;
 
                   resolve();
                 } else if (e.data.type === "progress") {
-                  ctx.fillStyle = "green";
-                  ctx.fillRect(
-                    x * gridSize,
-                    y * gridSize,
-                    gridSize * e.data.progress,
-                    gridSize
-                  );
+                  progress[i] = e.data.progress;
                 }
+                enqueueRender(i);
               };
 
               const errorListener = e => {
@@ -161,15 +195,6 @@ export function run() {
 
     queue.run().then(() => {
       console.log("Tick run in %s ms", (performance.now() - start).toFixed(2));
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          for (let { x, y, data } of imageDatas) {
-            //ctx.putImageData(data, x * gridSize, y * gridSize);
-          }
-          //tick()
-        });
-      });
     });
   }
   tick();
