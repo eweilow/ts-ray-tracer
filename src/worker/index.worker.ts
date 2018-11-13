@@ -1,22 +1,9 @@
-import { Textures } from "./textures";
 import { ctx } from "./context";
-import { Plane } from "./primitives/plane";
-import { Sphere } from "./primitives/sphere";
-import { dot } from "./math/dot";
-import { reflect } from "./math/reflect";
-import { fresnel } from "./math/fresnel";
-import { sky } from "./primitives/sky";
 import { Projector } from "./projector";
-import { perturbate } from "./math/perturbate";
 import { setRandomNumbers } from "./random";
+import { beginTrace, rayData, RayData, RayStride, printRay } from "./tracing";
 
-const plane = new Plane(-3);
-const spheres = [
-  new Sphere(13, 0, 0, 5, 0),
-  new Sphere(13, -7, -2, 0.5, 1),
-  new Sphere(13, -5, -2, 0.25, 1)
-];
-
+/*
 class Ray {
   static intersectSphere(raydata: number[], stride: number): number[] {
     const intersectedSpheres = spheres
@@ -155,14 +142,80 @@ class Ray {
     return sky(raydata, stride);
   }
 }
+*/
 
-const projector = new Projector(70, 0, -0.1);
+/*
 
+function hypothetical_sky(
+  rayData: Float32Array,
+  positionIndex: number,
+  directionIndex: number
+): Color {
+  return [0, 0, 0];
+}
+
+const hypothetical_intersection_data: Primitive[] = [];
+function hypothetical_intersection_finder(
+  intersectionData: Primitive[],
+  rayData: Float32Array,
+  positionIndex: number,
+  directionIndex: number
+): number {
+  return 0;
+}
+
+function hypothetical_tracer(
+  rayData: Float32Array,
+  positionIndex: number,
+  directionIndex: number
+): Color {
+  const closest = hypothetical_intersection_finder(
+    hypothetical_intersection_data,
+    rayData,
+    positionIndex,
+    directionIndex
+  );
+  if (closest < 0) {
+    return hypothetical_sky();
+  }
+}
+
+type Color = [number, number, number];
+type Vector = [number, number, number];
+type SourceRay = {
+  from: Vector;
+  towards: Vector;
+};
+
+function stackTracer(): Color {
+  const maxBounces = 5;
+  const data = new Float32Array(3 + maxBounces * (3 + 3));
+  hypothetical_tracer(data, 3, 6);
+  return [data[0], data[1], data[2]];
+}
+*/
+
+const projector = new Projector(70, 0, 0);
+
+function renderPixel(
+  imageData: Uint8ClampedArray,
+  rayData: Float32Array,
+  width: number,
+  height: number,
+  cellX: number,
+  cellY: number,
+  pixelX: number,
+  pixelY: number,
+  index: number
+) {
+  rayData.fill(0);
+  projector.project(rayData, 0, pixelX, pixelY, width, height);
+  beginTrace(rayData);
+}
 function render(e) {
   let [rnd, img, cx, cy, cellSize, width, height, time] = e.data;
   setRandomNumbers(rnd);
   const imageData = img as Uint8ClampedArray;
-  const raydata = [0, 0, 0, 0, 0, 0];
 
   let lastProgress = Date.now();
 
@@ -180,15 +233,30 @@ function render(e) {
       const py = cy + y;
 
       const i = y * cellSize + x;
-      const stride = 0;
 
-      projector.project(raydata, 0, px, py, width, height);
-      const color = Ray.trace(raydata, stride, 32, 0);
+      renderPixel(imageData, rayData, width, height, x, y, px, py, i);
+      // const color = Ray.trace(raydata, stride, 64, 0);
 
-      imageData[i * 4 + 0] = Math.floor(color[0] * 255);
-      imageData[i * 4 + 1] = Math.floor(color[1] * 255);
-      imageData[i * 4 + 2] = Math.floor(color[2] * 255);
-      imageData[i * 4 + 3] = 255; // Math.sin(Math.sqrt(dx*dx + dy*dy) * 0.1) * 255;
+      if (false) {
+        const offset = 0;
+        const f = Math.sqrt(rayData[RayStride * offset + RayData.Dist]);
+        const depth = f / 30;
+        imageData[i * 4 + 0] = Math.floor(depth * 255);
+        imageData[i * 4 + 1] = Math.floor(depth * 255);
+        imageData[i * 4 + 2] = Math.floor(depth * 255);
+        imageData[i * 4 + 3] = 255;
+      } else {
+        imageData[i * 4 + 0] = Math.floor(
+          rayData[RayStride * 0 + RayData.R] * 255
+        );
+        imageData[i * 4 + 1] = Math.floor(
+          rayData[RayStride * 0 + RayData.G] * 255
+        );
+        imageData[i * 4 + 2] = Math.floor(
+          rayData[RayStride * 0 + RayData.B] * 255
+        );
+        imageData[i * 4 + 3] = 255;
+      }
     }
   }
   ctx.postMessage({ type: "done", imageData });

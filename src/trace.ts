@@ -1,8 +1,9 @@
 import ImportedTracer = require("worker-loader!./worker/index.worker.ts");
 
 export function run() {
+  const scale = 2;
   const gridSize = 128;
-  const size = gridSize * Math.floor(600 / gridSize) * 2;
+  const size = gridSize * Math.floor(600 / gridSize) * scale;
 
   const threads = 8;
 
@@ -10,7 +11,7 @@ export function run() {
   canvas.width = size;
   canvas.height = size;
 
-  canvas.style.transform = "scale(0.5, 0.5)";
+  canvas.style.transform = `scale(${1 / scale}, ${1 / scale})`;
   canvas.style.transformOrigin = "top left";
 
   const ctx = canvas.getContext("2d");

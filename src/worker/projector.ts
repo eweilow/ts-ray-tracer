@@ -1,3 +1,5 @@
+import { RayData } from "./tracing";
+
 export class Projector {
   public readonly fov: number;
 
@@ -43,12 +45,12 @@ export class Projector {
     return [
       Math.cos(rotationX) * Math.cos(rotationY),
       Math.sin(rotationX) * Math.cos(rotationY),
-      Math.cos(rotationX) * Math.sin(rotationY)
+      Math.cos(rotationY) * Math.sin(rotationY)
     ];
   }
 
   project(
-    raydata: number[],
+    raydata: Float32Array,
     stride: number,
     px: number,
     py: number,
@@ -73,11 +75,11 @@ export class Projector {
         direction[2] * direction[2]
     );
 
-    raydata[stride + 0] = 0;
-    raydata[stride + 1] = 0;
-    raydata[stride + 2] = 0;
-    raydata[stride + 3] = direction[0] / p;
-    raydata[stride + 4] = direction[1] / p;
-    raydata[stride + 5] = direction[2] / p;
+    raydata[stride + RayData.X] = 0;
+    raydata[stride + RayData.Y] = 0;
+    raydata[stride + RayData.Z] = 0;
+    raydata[stride + RayData.DX] = direction[0] / p;
+    raydata[stride + RayData.DY] = direction[1] / p;
+    raydata[stride + RayData.DZ] = direction[2] / p;
   }
 }

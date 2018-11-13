@@ -1,4 +1,5 @@
 import { Primitive } from "./base";
+import { RayData, RayStride } from "../tracing";
 
 export class Sphere extends Primitive {
   constructor(
@@ -11,19 +12,19 @@ export class Sphere extends Primitive {
     super();
   }
 
-  intersect(raydata: number[], stride: number): number[] {
+  intersect(rayData: Float32Array, currentRay: number) {
     const r = this.radius;
     const sx = this.x;
     const sy = this.y;
     const sz = this.z;
 
-    const x = raydata[stride + 0];
-    const y = raydata[stride + 1];
-    const z = raydata[stride + 2];
+    const x = rayData[currentRay * RayStride + RayData.X];
+    const y = rayData[currentRay * RayStride + RayData.Y];
+    const z = rayData[currentRay * RayStride + RayData.Z];
 
-    const dx = raydata[stride + 3];
-    const dy = raydata[stride + 4];
-    const dz = raydata[stride + 5];
+    const dx = rayData[currentRay * RayStride + RayData.DX];
+    const dy = rayData[currentRay * RayStride + RayData.DY];
+    const dz = rayData[currentRay * RayStride + RayData.DZ];
 
     const distX = sx - x;
     const distY = sy - y;
@@ -48,32 +49,40 @@ export class Sphere extends Primitive {
     if (hSquare <= r * r) {
       const tSquare = r * r - hSquare;
       const t = Math.sqrt(tSquare);
-      const h = Math.sqrt(hSquare);
+      const dLen = Math.sqrt(dLength);
 
-      const ix = sx + hx - (dx * t) / Math.sqrt(dLength);
-      const iy = sy + hy - (dy * t) / Math.sqrt(dLength);
-      const iz = sz + hz - (dz * t) / Math.sqrt(dLength);
+      const incidentX = sx + hx - (dx * t) / dLen;
+      const incidentY = sy + hy - (dy * t) / dLen;
+      const incidentZ = sz + hz - (dz * t) / dLen;
 
-      let rx = ix - sx;
-      let ry = iy - sy;
-      let rz = iz - sz;
+      let rx = incidentX - sx;
+      let ry = incidentY - sy;
+      let rz = incidentZ - sz;
+
+      const squareDistance =
+        Math.pow(incidentX - x, 2) +
+        Math.pow(incidentY - y, 2) +
+        Math.pow(incidentZ - z, 2);
 
       const rLength = Math.sqrt(rx * rx + ry * ry + rz * rz);
       rx /= rLength;
       ry /= rLength;
       rz /= rLength;
-      return [
-        (ix - x) * (ix - x) + (iy - y) * (iy - y) + (iz - z) * (iz - z),
-        ix + rx * 0.001,
-        iy + ry * 0.001,
-        iz + rz * 0.001,
-        rx,
-        ry,
-        rz,
-        this.brightness
-      ];
-    }
 
-    return null;
+      if (squareDistance < rayData[currentRay * RayStride + RayData.Dist]) {
+        rayData[(currentRay + 1) * RayStride + RayData.X] = incidentX;
+        rayData[(currentRay + 1) * RayStride + RayData.Y] = incidentY;
+        rayData[(currentRay + 1) * RayStride + RayData.Z] = incidentZ;
+        rayData[(currentRay + 1) * RayStride + RayData.NX] = rx;
+        rayData[(currentRay + 1) * RayStride + RayData.NY] = ry;
+        rayData[(currentRay + 1) * RayStride + RayData.NZ] = rz;
+        rayData[currentRay * RayStride + RayData.R] = 0;
+        rayData[currentRay * RayStride + RayData.G] = 0;
+        rayData[currentRay * RayStride + RayData.B] = 1;
+        rayData[currentRay * RayStride + RayData.Reflectivity] = 0.8;
+        rayData[currentRay * RayStride + RayData.Diffuse] = 0;
+        rayData[currentRay * RayStride + RayData.Dist] = squareDistance;
+      }
+    }
   }
 }

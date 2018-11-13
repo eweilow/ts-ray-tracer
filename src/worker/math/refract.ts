@@ -1,3 +1,5 @@
+import { dot } from "./dot";
+
 export function refract(
   raydata: number[],
   directionStride: number,
