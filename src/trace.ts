@@ -1,8 +1,8 @@
 import ImportedTracer = require("worker-loader!./worker/index.worker.ts");
 
 export function run() {
-  const scale = 2;
-  const gridSize = 128;
+  const scale = 4;
+  const gridSize = 64;
   const size = gridSize * Math.floor(600 / gridSize) * scale;
 
   const threads = 8;
@@ -137,60 +137,68 @@ export function run() {
   function tick() {
     const time = Date.now();
 
+    const indices = [];
     for (let x = 0; x < grids; x++) {
       for (let y = 0; y < grids; y++) {
         const i = y * grids + x;
 
-        const imageBuffer = imageBuffers[i];
+        const dist = Math.pow(x - grids / 2, 2) + Math.pow(y - grids / 2, 2);
+        indices.push([x, y, i, Math.sqrt(dist)]);
+      }
+    }
 
-        queue
-          .enqueue(x * grids + y, async worker => {
-            progress[i] = 0;
-            enqueueRender(i);
-            return new Promise<void>((resolve, reject) => {
-              const listener = e => {
-                if (e.data.type === "done") {
-                  worker.removeEventListener("message", listener);
-                  worker.removeEventListener("error", errorListener);
+    indices.sort((a, b) => a[3] - b[3]);
 
-                  const data = new ImageData(
-                    e.data.imageData,
-                    gridSize,
-                    gridSize
-                  );
-                  imageDatas[i] = data;
-                  imageBuffers[i] = e.data;
-                  progress[i] = 1;
+    for (const [x, y, i] of indices) {
+      const imageBuffer = imageBuffers[i];
 
-                  resolve();
-                } else if (e.data.type === "progress") {
-                  progress[i] = e.data.progress;
-                }
-                enqueueRender(i);
-              };
-
-              const errorListener = e => {
+      queue
+        .enqueue(i, async worker => {
+          progress[i] = 0;
+          enqueueRender(i);
+          return new Promise<void>((resolve, reject) => {
+            const listener = e => {
+              if (e.data.type === "done") {
                 worker.removeEventListener("message", listener);
                 worker.removeEventListener("error", errorListener);
-              };
 
-              worker.addEventListener("message", listener);
-              worker.addEventListener("error", errorListener);
+                const data = new ImageData(
+                  e.data.imageData,
+                  gridSize,
+                  gridSize
+                );
+                imageDatas[i] = data;
+                imageBuffers[i] = e.data;
+                progress[i] = 1;
 
-              worker.postMessage([
-                randomNumbers,
-                imageBuffer,
-                x * gridSize,
-                y * gridSize,
-                gridSize,
-                size,
-                size,
-                time - startTime
-              ]);
-            });
-          })
-          .catch(err => console.error(err));
-      }
+                resolve();
+              } else if (e.data.type === "progress") {
+                progress[i] = e.data.progress;
+              }
+              enqueueRender(i);
+            };
+
+            const errorListener = e => {
+              worker.removeEventListener("message", listener);
+              worker.removeEventListener("error", errorListener);
+            };
+
+            worker.addEventListener("message", listener);
+            worker.addEventListener("error", errorListener);
+
+            worker.postMessage([
+              randomNumbers,
+              imageBuffer,
+              x * gridSize,
+              y * gridSize,
+              gridSize,
+              size,
+              size,
+              time - startTime
+            ]);
+          });
+        })
+        .catch(err => console.error(err));
     }
     const start = performance.now();
 

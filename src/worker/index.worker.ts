@@ -195,7 +195,7 @@ function stackTracer(): Color {
 }
 */
 
-const projector = new Projector(70, 0, 0);
+const projector = new Projector(90, 0, 0);
 
 function renderPixel(
   imageData: Uint8ClampedArray,

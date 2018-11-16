@@ -7,7 +7,10 @@ export class Sphere extends Primitive {
     public readonly y: number,
     public readonly z: number,
     public readonly radius: number,
-    public readonly brightness: number
+    public readonly brightness: number,
+    public readonly r: number,
+    public readonly g: number,
+    public readonly b: number
   ) {
     super();
   }
@@ -76,9 +79,9 @@ export class Sphere extends Primitive {
         rayData[(currentRay + 1) * RayStride + RayData.NX] = rx;
         rayData[(currentRay + 1) * RayStride + RayData.NY] = ry;
         rayData[(currentRay + 1) * RayStride + RayData.NZ] = rz;
-        rayData[currentRay * RayStride + RayData.R] = 0;
-        rayData[currentRay * RayStride + RayData.G] = 0;
-        rayData[currentRay * RayStride + RayData.B] = 1;
+        rayData[currentRay * RayStride + RayData.R] = this.r;
+        rayData[currentRay * RayStride + RayData.G] = this.g;
+        rayData[currentRay * RayStride + RayData.B] = this.b;
         rayData[currentRay * RayStride + RayData.Reflectivity] = 0.8;
         rayData[currentRay * RayStride + RayData.Diffuse] = 0;
         rayData[currentRay * RayStride + RayData.Dist] = squareDistance;
