@@ -1,28 +1,25 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MinifyPlugin = require("babel-minify-webpack-plugin");
+const MinifyPlugin = require("terser-webpack-plugin");
+const PrepackWebpackPlugin = require("prepack-webpack-plugin").default;
 const path = require("path");
 
 const dev = process.env.NODE_ENV !== "production";
 
-const sharedPlugins = [
-  new HtmlWebpackPlugin()
-];
+const sharedPlugins = [new HtmlWebpackPlugin()];
 const devPlugins = [];
 const prodPlugins = [
-  new MinifyPlugin()
+  new MinifyPlugin(),
+  new PrepackWebpackPlugin({
+    test: /\.prepack.tsx?$/
+  })
 ];
 
-const plugins = dev 
-  ? [
-    ...sharedPlugins,
-    ...devPlugins
-  ]
-  : [
-    ...sharedPlugins,
-    ...prodPlugins
-  ];
+const plugins = dev
+  ? [...sharedPlugins, ...devPlugins, ...prodPlugins]
+  : [...sharedPlugins, ...prodPlugins];
 
 module.exports = {
+  mode: dev ? "development" : "production",
   entry: "./src/index.ts",
   output: {
     path: path.join(__dirname, "/dist"),
@@ -32,7 +29,8 @@ module.exports = {
     extensions: [".ts", ".tsx", ".js", ".worker.ts"]
   },
   module: {
-    loaders: [
+    rules: [
+      { test: /\.worker.tsx?$/, use: ["ts-loader", "worker-loader"] },
       { test: /\.tsx?$/, loader: "ts-loader" }
     ]
   },
@@ -41,4 +39,4 @@ module.exports = {
   devServer: {
     host: "0.0.0.0"
   }
-}
+};
