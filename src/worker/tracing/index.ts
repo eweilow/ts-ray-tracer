@@ -57,8 +57,8 @@ export function printRay(rayData: Float32Array, rayNumber: number) {
   ].join(", ");
 }
 
-const MaxDiffuseTraces = 4;
-const MaxDiffuseBranching = 8;
+const MaxDiffuseTraces = 1;
+const MaxDiffuseBranching = 128;
 const MAX = Number.MAX_SAFE_INTEGER;
 function intersect(
   rayData: Float32Array,

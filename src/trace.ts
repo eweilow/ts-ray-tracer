@@ -1,11 +1,11 @@
-import ImportedTracer = require("worker-loader!./worker/index.worker.ts");
+import ImportedTracer = require("./worker/index.worker.ts");
 
 export function run() {
-  const scale = 4;
+  const scale = 8;
   const gridSize = 64;
   const size = gridSize * Math.floor(600 / gridSize) * scale;
 
-  const threads = 8;
+  const threads = 4;
 
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -77,7 +77,7 @@ export function run() {
     }
   }
 
-  const queue = new Queue(threads, ImportedTracer);
+  const queue = new Queue(threads, ImportedTracer as any);
 
   const startTime = Date.now();
 
