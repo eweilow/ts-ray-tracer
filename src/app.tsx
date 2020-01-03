@@ -95,12 +95,12 @@ function RangeInput(props: {
   );
 }
 export function App() {
-  const [dimension, currentDimension, setDimension] = useDebouncedValue(128);
-  const [gridSize, currentGridSize, setGridSize] = useDebouncedValue(16);
+  const [dimension, currentDimension, setDimension] = useDebouncedValue(1024);
+  const [gridSize, currentGridSize, setGridSize] = useDebouncedValue(64);
   const [concurrency, currentConcurrency, setConcurrency] = useDebouncedValue(
     threads
   );
-  const [scale, currentScale, setScale] = useDebouncedValue(1);
+  const [scale, currentScale, setScale] = useDebouncedValue(2);
   return (
     <>
       <RangeInput
