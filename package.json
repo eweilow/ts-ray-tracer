@@ -7,7 +7,7 @@
   "scripts": {
     "watch": "webpack-dev-server --config webpack.config.js",
     "build": "webpack --config webpack.config.js",
-    "start": "http-server dist"
+    "start": "http-server ./public"
   },
   "author": "",
   "license": "MIT",

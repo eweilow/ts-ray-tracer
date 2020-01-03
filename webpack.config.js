@@ -22,7 +22,7 @@ module.exports = {
   mode: dev ? "development" : "production",
   entry: "./src/index.ts",
   output: {
-    path: path.join(__dirname, "/dist"),
+    path: path.join(__dirname, "/public"),
     filename: "bundle.js"
   },
   resolve: {
