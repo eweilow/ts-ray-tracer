@@ -22,5 +22,7 @@ export class Texture {
     rayData[i] = color[0];
     rayData[i + 1] = color[1];
     rayData[i + 2] = color[2];
+
+    return color;
   }
 }

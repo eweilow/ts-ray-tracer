@@ -1,13 +1,14 @@
 import ImportedTracer = require("./worker/index.worker.ts");
 
-export function run() {
-  const scale = 8;
-  const gridSize = 64;
-  const size = gridSize * Math.floor(600 / gridSize) * scale;
+export function run(
+  dimension: number,
+  gridSize: number,
+  scale: number,
+  threads: number,
+  canvas: HTMLCanvasElement
+) {
+  const size = gridSize * Math.floor(dimension / gridSize) * scale;
 
-  const threads = 4;
-
-  const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
 
@@ -34,6 +35,12 @@ export function run() {
         const thread = new c();
         this.threads.push(thread);
         this.freeThreads.push(thread);
+      }
+    }
+
+    public cancel() {
+      for (const thread of this.threads) {
+        thread.terminate();
       }
     }
 
@@ -134,6 +141,8 @@ export function run() {
     }
   }
 
+  let cancel = false;
+
   function tick() {
     const time = Date.now();
 
@@ -154,6 +163,10 @@ export function run() {
 
       queue
         .enqueue(i, async worker => {
+          if (cancel) {
+            return;
+          }
+
           progress[i] = 0;
           enqueueRender(i);
           return new Promise<void>((resolve, reject) => {
@@ -200,13 +213,16 @@ export function run() {
         })
         .catch(err => console.error(err));
     }
-    const start = performance.now();
 
+    const start = performance.now();
     queue.run().then(() => {
       console.log("Tick run in %s ms", (performance.now() - start).toFixed(2));
     });
   }
   tick();
 
-  document.body.appendChild(canvas);
+  return () => {
+    queue.cancel();
+    cancel = true;
+  };
 }

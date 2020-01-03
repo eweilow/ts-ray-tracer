@@ -1,23 +1,23 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MinifyPlugin = require("terser-webpack-plugin");
-const PrepackWebpackPlugin = require("prepack-webpack-plugin").default;
 const path = require("path");
 
 const dev = process.env.NODE_ENV !== "production";
 
 const sharedPlugins = [new HtmlWebpackPlugin()];
 const devPlugins = [];
-const prodPlugins = [
-  new MinifyPlugin(),
-  new PrepackWebpackPlugin({
-    test: /\.prepack.tsx?$/
-  })
-];
+const prodPlugins = [new MinifyPlugin()];
 
 const plugins = dev
   ? [...sharedPlugins, ...devPlugins, ...prodPlugins]
   : [...sharedPlugins, ...prodPlugins];
 
+const tsLoader = {
+  loader: "ts-loader",
+  options: {
+    transpileOnly: true
+  }
+};
 module.exports = {
   mode: dev ? "development" : "production",
   entry: "./src/index.ts",
@@ -30,8 +30,8 @@ module.exports = {
   },
   module: {
     rules: [
-      { test: /\.worker.tsx?$/, use: ["ts-loader", "worker-loader"] },
-      { test: /\.tsx?$/, loader: "ts-loader" }
+      { test: /\.worker.tsx?$/, use: [tsLoader, "worker-loader"] },
+      { test: /\.tsx?$/, use: [tsLoader] }
     ]
   },
   plugins,

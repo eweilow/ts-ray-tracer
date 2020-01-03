@@ -3,7 +3,16 @@ import { setRandomNumbers } from "./random";
 import { rayData, RayData, RayStride } from "./tracing";
 import { renderPixel } from "./tracing/render";
 
-function render(e) {
+let cancelled = false;
+function render(e: MessageEvent) {
+  if (e.data === "cancel") {
+    cancelled = true;
+    return;
+  }
+  if (cancelled) {
+    return;
+  }
+
   let [rnd, img, cx, cy, cellSize, width, height, time] = e.data;
   setRandomNumbers(rnd);
   const imageData = img as Uint8ClampedArray;
@@ -14,6 +23,9 @@ function render(e) {
     const px = cx + x;
 
     if (Date.now() - lastProgress > 10) {
+      if (cancelled) {
+        return;
+      }
       lastProgress = Date.now();
       ctx.postMessage({
         type: "progress",
@@ -49,6 +61,9 @@ function render(e) {
         imageData[i * 4 + 3] = 255;
       }
     }
+  }
+  if (cancelled) {
+    return;
   }
   ctx.postMessage({ type: "done", imageData });
 }
