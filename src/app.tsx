@@ -21,7 +21,7 @@ function Renderer(props: {
 }) {
   const ref = useRef<HTMLCanvasElement>();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const cancel = run(
       props.dimension,
       props.gridSize,
